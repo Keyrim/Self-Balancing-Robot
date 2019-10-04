@@ -1,0 +1,8 @@
+//Control direction moteurs en bleu
+left motor:
+step d11
+sens D12
+
+right motor
+step D10
+sens D9
