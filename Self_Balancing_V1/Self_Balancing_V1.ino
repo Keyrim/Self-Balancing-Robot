@@ -8,11 +8,11 @@ unsigned long loop_timer = 0 ;
 
 
 
-//Motor 1 is the right motor and m2 is the left one 
-#define pin_sens_m1 3
-#define pin_sens_m2 4
-#define pin_step_m1 2
-#define pin_step_m2 5
+//Motor's pins
+#define pin_left_step 11
+#define pin_right_step 10
+#define pin_left_dir 12
+#define pin_right_dir 9
 
 //Read angle 
 const int MPU=0x68;  // I2C address of the MPU-6050
@@ -22,20 +22,21 @@ float AcX, AcY, AcZ, GyX=0, GyY=0, GyZ=0;
 float X=0, Y=0;
 
 //Moove side motors
-void left_step(bool sens)
+void moove_left(bool dir)
 {
-    digitalWrite(pin_sens_m2, sens);
-    digitalWrite(pin_step_m2, HIGH);
-    delay(LOW);
-    digitalWrite(pin_step_m2, LOW);
+    digitalWrite(pin_left_dir, dir);
+    digitalWrite(pin_left_step, HIGH);
+    delayMicroseconds(20);
+    digitalWrite(pin_left_step, LOW);
 }
-void right_step(bool sens)
+void moove_right(bool dir)
 {
-    digitalWrite(pin_sens_m1, sens);
-    digitalWrite(pin_step_m1, HIGH);
-    delay(LOW);
-    digitalWrite(pin_step_m1, LOW);
+    digitalWrite(pin_right_dir, dir);
+    digitalWrite(pin_right_step, HIGH);
+    delayMicroseconds(20);
+    digitalWrite(pin_right_step, LOW);
 }
+
 
 //Timmer motor speed 
 unsigned long pre_timer_left = 0 ;
@@ -73,10 +74,7 @@ void read_mpu()
 
 }
 
-void step(int pin, bool sens)
-{
-    digitalWrite(pin, sens);
-}
+
 
 
 
@@ -84,6 +82,10 @@ void setup()
 {
     Serial.begin(115200);
     Serial.println("Init 1");
+
+    //Setup the motors
+    for(byte o = 9 ;  o <= 12; o++)
+        pinMode(o, OUTPUT);
     
     // Wake up the mpu 
     Wire.begin();
@@ -108,6 +110,7 @@ void setup()
     Wire.write(0X08);
     Wire.endTransmission();
     Serial.println("End init");
+    
 
 }
 
@@ -122,19 +125,25 @@ void loop()
     //Complementary filter
     Y += GyY / frequence ;
     Y = Y * 0.996 + AcX * 0.004;
-    Serial.println(Y);
+    
+    left_speed = 15 * (90-abs(Y));
+    Serial.println(left_speed);
+    
 
-    if(Y >= 10)
+    
+    //Frequence regulation here 
+    while(micros()<loop_timer + 1000000/frequence)
     {
-        if(micros() > pre_timer_left +400)
+        //Even if we are wainting we still have to moove our moter
+        if(abs(Y)>10)
         {
-            left_step(true);
-            pre_timer_left = micros();
+            if(micros() > pre_timer_right + left_speed)
+            {
+                pre_timer_right = micros();
+                moove_left(true);
+            }
         }
     }
-
-    //Frequence regulation here 
-    while(micros()<loop_timer + 1000000/frequence);
     loop_timer = micros();
 
 }
