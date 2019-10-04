@@ -1,6 +1,7 @@
 {
     "board": "arduino:avr:nano",
-    "port": "COM10",
+    "port": "COM6",
     "sketch": "Self_Balancing_V1\\Self_Balancing_V1.ino",
-    "configuration": "cpu=atmega328"
+    "configuration": "cpu=atmega328",
+    "programmer": "AVRISP mkII"
 }
