@@ -1,0 +1,23 @@
+Fréquence de base : 16 000 000 Hz
+Période de 0,0000000625‬ s soit 0,0625 µs
+Pour une période de 800 µs (periode mini pour un moteur en pas entier) 
+    -> 800 µs <=> 12 800 tick d'horloge 
+Pour une période de 2000 µs (periode max pour un moteur en pas entier) 
+    -> 2000 µs <=> 32 000 tick d'horloge 
+
+Hors sur arduino Timer0 et Timer2 sont sur 8 bits soit 256 valeurs et 256 < 32 000
+MAIS le Timer1 est sur 16 bits soit 65 536 valeurs on peut donc l'utiliser pour les interuptions des step moteurs 
+
+Regsitre def
+TCCRx - Timer/Counter Control Register. The prescaler can be configured here.
+TCNTx - Timer/Counter Register. The actual timer value is stored here.
+OCRx - Output Compare Register
+ICRx - Input Capture Register (only for 16bit timer)
+TIMSKx - Timer/Counter Interrupt Mask Register. To enable/disable timer interrupts.
+TIFRx - Timer/Counter Interrupt Flag Register. Indicates a pending timer interrupt.
+
+Regisre timer1 :
+TCNT1L      :       Timer bit de 0 a 7
+TCNTIH      :       Timer bit de 8 a 15
+TCCR1       :       Registre de contrôle
+

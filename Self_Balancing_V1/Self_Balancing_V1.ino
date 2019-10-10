@@ -80,8 +80,6 @@ void read_mpu()
 
 void setup()
 {
-    Serial.begin(115200);
-    Serial.println("Init 1");
 
     //Setup the motors
     for(byte o = 9 ;  o <= 12; o++)
@@ -109,13 +107,13 @@ void setup()
     Wire.write(0x1B);
     Wire.write(0X08);
     Wire.endTransmission();
-    Serial.println("End init");
     
 
 }
 
 void loop()
 {
+    /*
     read_mpu();
     //Compute our raw values
     float total_vector = sqrt(AcX*AcX + AcY*AcY + AcZ*AcZ);    
@@ -126,8 +124,7 @@ void loop()
     Y += GyY / frequence ;
     Y = Y * 0.996 + AcX * 0.004;
     
-    left_speed = 15 * (90-abs(Y));
-    Serial.println(left_speed);
+    
     
 
     
@@ -135,9 +132,9 @@ void loop()
     while(micros()<loop_timer + 1000000/frequence)
     {
         //Even if we are wainting we still have to moove our moter
-        if(abs(Y)>10)
+        if(true)
         {
-            if(micros() > pre_timer_right + left_speed)
+            if(micros() > pre_timer_right + 200)
             {
                 pre_timer_right = micros();
                 moove_left(true);
@@ -145,5 +142,16 @@ void loop()
         }
     }
     loop_timer = micros();
+    */
+    //Speed test to understand whyt the fuck isNT IT WORKING LMEKNGKM
+    for(int speed = 2000; speed > 400; speed -= 100)
+    {
+        for(int step = 0; step < 1000; step ++ )
+        {
+            moove_left(true);
+            delayMicroseconds(speed);
+        }
+    }
+    
 
 }
