@@ -1,5 +1,8 @@
 #define step 10
 #define dir 9
+#include "BasicStepperDriver.h" // generic
+BasicStepperDriver stepper(dir, step);
+//test library 
 //The code is made for an increasing speed and not a decresaing number_of_increment
 //Must be carefull if using a decreasing speed
 #define starting_period 1000
@@ -9,6 +12,9 @@
 
 void setup()
 {
+    //Init stepper begin(rpm, microsteps)
+    stepper.begin(20, 16);
+    stepper.enable().
     pinMode(step, OUTPUT);
     pinMode(dir, OUTPUT);
     digitalWrite(dir, HIGH);

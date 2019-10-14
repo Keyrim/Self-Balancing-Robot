@@ -16,7 +16,7 @@ cli();//stop interrupts
   TCCR1B = 0;// same for TCCR1B
   TCNT1  = 0;//initialize counter value to 0
   // set compare match register for 1hz increments
-  OCR1A = 15999;// = ( 16000000 / (prescaler * fre cible))
+  OCR1A = 1439;// = ( 16000000 / (prescaler * fre cible))
   // turn on CTC mode
   TCCR1B |= (1 << WGM12);
   //  CS10 bits for 1prescaler
@@ -40,5 +40,5 @@ ISR(TIMER1_COMPA_vect)
 
 void loop()
 {
-  
+  //do other things here
 }

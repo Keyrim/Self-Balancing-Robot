@@ -2,5 +2,5 @@
     "board": "arduino:avr:nano",
     "port": "COM9",
     "configuration": "cpu=atmega328",
-    "sketch": "test_speed\\test_speed.ino"
+    "sketch": "Self_Balancing_V1\\Self_Balancing_V1.ino"
 }
