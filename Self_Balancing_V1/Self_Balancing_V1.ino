@@ -78,7 +78,7 @@ void read_mpu()
 
 void setup()
 {
-    //Serial.begin(115200);
+    Serial.begin(115200);
 
     //Setup the motors
     for(byte o = 9 ;  o <= 12; o++)
@@ -128,9 +128,7 @@ void setup()
 
 }
 ISR(TIMER1_COMPA_vect)
-{
-    
-    
+{     
     moove_right(true);
 }
 
@@ -151,6 +149,7 @@ void loop()
     
     
     unsigned tic = abs(Y) * 1000 ;
+    Serial.println(tic);
     //Serial.println(tic);
     if(tic < 13000)tic = 13000 ;
     if (tic > 65000)tic = 65000 ;
