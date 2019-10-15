@@ -1,3 +1,10 @@
+//Version 0 supposé suivante à la version "précurseur"
+//Rien d'ineressant
+//Mesure de l'angle avec l'accéléromètre et une moenne constante_moyenne_glissante
+//Période des moteurs avec un delayMicroseconds
+
+
+
 #include<Wire.h>
 float angleMoy, angle;
 const byte constante_moyenne_glissante = 20 ;

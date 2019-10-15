@@ -1,12 +1,14 @@
-//Program forthe balancing robot
+//Première version intterressante:
+//Mesure de l'angle avec un "complementary filter" qui marche 
+//Gestion de la période d'un moteur par interuption timer 
+
+//Program for the balancing robot
 //Library for the MPU
 #include <Wire.h>   
 unsigned long loop_timer = 0 ;
 
 //Motor conections
 //A4988 steps settings
-
-
 
 //Motor's pins
 #define pin_left_step 11
