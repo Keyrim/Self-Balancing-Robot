@@ -30,7 +30,6 @@ void Stepper::initialize_timer()
   TCCR1A = 0;// set entire TCCR1A register to 0
   TCCR1B = 0;// same for TCCR1B
   TCNT1  = 0;//initialize counter value to 0
-  // set compare match register for 1hz increments
   OCR1A = 15999;// = ( 16000000 / (prescaler * fre cible))
   // turn on CTC mode
   TCCR1B |= (1 << WGM12);
