@@ -19,8 +19,8 @@ cli();//stop interrupts
   OCR1A = 15999;// = ( 16000000 / (prescaler * fre cible))
   // turn on CTC mode
   TCCR1B |= (1 << WGM12);
-  //  CS10 bits for 1prescaler
-  TCCR1B |=  (1 << CS10);      
+  //  CS11 bits for 8 prescaler
+  TCCR1B |=  (1 << CS11);      
   // enable timer compare interrupt
   TIMSK1 |= (1 << OCIE1A); 
 

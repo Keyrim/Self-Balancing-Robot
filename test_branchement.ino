@@ -1,5 +1,5 @@
-#define step_pin 10
-#define dir_pin 9
+#define step_pin 11
+#define dir_pin 12
 
 void setup()
 {
@@ -11,9 +11,9 @@ void setup()
 void loop()
 {
     digitalWrite(step_pin, HIGH);
-    delay(1);    
+    delay(1000);    
     digitalWrite(step_pin, LOW);
-    delay(100);
+    delay(1000);
     
 
 }

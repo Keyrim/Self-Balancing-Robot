@@ -1,20 +1,19 @@
-//Première version intterressante:
-//Mesure de l'angle avec un "complementary filter" qui marche 
-//Gestion de la période d'un moteur par interuption timer 
+//Third version, this time using the stepper_moteur class wich is based on interuption timer
 
-//Program for the balancing robot
+//Include the class 
+#include "Stepper_moteur.h"
 //Library for the MPU
 #include <Wire.h>   
 unsigned long loop_timer = 0 ;
-
-//Motor conections
-//A4988 steps settings
 
 //Motor's pins
 #define pin_left_step 11
 #define pin_right_step 10
 #define pin_left_dir 12
 #define pin_right_dir 9
+
+//Create a stepper_moteur object
+Stepper_moteur stepper ;
 
 //Read angle 
 const int MPU=0x68;  // I2C address of the MPU-6050
@@ -23,28 +22,15 @@ const int frequence = 250; //Frequence of the loop in hz
 float AcX, AcY, AcZ, GyX=0, GyY=0, GyZ=0;
 float X=0, Y=0;
 
-//Moove side motors
-void moove_left(bool dir)
-{
-    digitalWrite(pin_left_dir, dir);
-    digitalWrite(pin_left_step, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(pin_left_step, LOW);
-}
-void moove_right(bool dir)
-{
-    digitalWrite(pin_right_dir, dir);
-    digitalWrite(pin_right_step, HIGH);
-    delayMicroseconds(10);
-    digitalWrite(pin_right_step, LOW);
-}
+//Pid 
+#define angle_min 5                         //The robot compensate before reaching this angle 
+const float kP = 300 , kI = 0 , kD = 0 ;
+float p, i = 0 , d ;
+float consigne = 0 ;
+float corection = 0 ;
+float previous_error = 0 , error ;
 
-
-//The speed is defined in degrees per seconds 
-int left_speed = 0 ;
-int right_speed = 0 ; 
-
-
+//read the mpu 
 void read_mpu()
 {
     
@@ -72,20 +58,12 @@ void read_mpu()
     GyY = (Wire.read()<<8|Wire.read())/65.5;  
     GyZ = (Wire.read()<<8|Wire.read())/65.5;  
 
-}
-
-
-
+} 
 
 
 void setup()
 {
     Serial.begin(115200);
-
-    //Setup the motors
-    for(byte o = 9 ;  o <= 12; o++)
-        pinMode(o, OUTPUT);
-    
     // Wake up the mpu 
     Wire.begin();
     Wire.beginTransmission(MPU);
@@ -108,64 +86,59 @@ void setup()
     Wire.write(0x1B);
     Wire.write(0X08);
     Wire.endTransmission();
-    //On lui un peu de temps sinon le mpu est pas bien init
+
     delay(100);
 
-    //Setup interuptions 
-    cli();//stop interrupts
-    //set timer1 interrupt at 1Hz
-    TCCR1A = 0;// set entire TCCR1A register to 0
-    TCCR1B = 0;// same for TCCR1B
-    TCNT1  = 0;//initialize counter value to 0
-    // set compare match register for 1hz increments
-    OCR1A = 15999;// = ( 16000000 / (prescaler * fre cible))
-    // turn on CTC mode
-    TCCR1B |= (1 << WGM12);
-    //  CS10 bits for 1prescaler
-    TCCR1B |=  (1 << CS10);      
-    // enable timer compare interrupt
-    TIMSK1 |= (1 << OCIE1A); 
-    sei();//allow interrupts
-    
+    //Initialize our stepper_class 
+    stepper.initialize_stepper(0,pin_left_step, pin_left_dir );
+    stepper.initialize_stepper(1,pin_right_step, pin_right_dir );
+    stepper.set_periode(0, 2000);
+    stepper.set_periode(1, 2000);
+    stepper.initialize_timer();
+
+    //Initialize the MPU6050
 
 }
+
 ISR(TIMER1_COMPA_vect)
 {     
-    moove_right(true);
+    stepper.timer_interupt();
 }
 
 void loop()
 {
-    
-    read_mpu();
-    //Compute our raw values
+    read_mpu();                             //Get angles and accélérations
     float total_vector = sqrt(AcX*AcX + AcY*AcY + AcZ*AcZ);    
     AcX = -asin(AcX/total_vector)*57.32; 
-    AcY = asin(AcY/total_vector)*57.32;
+    AcY = asin(AcY/total_vector)*57.32; 
     
     //Complementary filter
-    Y += GyY / frequence ;
-    Y = Y * 0.996 + AcX * 0.004;
-    
-    //speed setting
-    
-    
-    unsigned tic = abs(Y) * 1000 ;
-    Serial.println(micros());
-    //Serial.println(tic);
-    if(tic < 13000)tic = 13000 ;
-    if (tic > 65000)tic = 65000 ;
-    
+    Y += GyX / frequence ;
+    Y = Y * 0.996 + (AcY + 2.33) * 0.004;   
 
-    OCR1A = tic ;
-    
-    
+    if(abs(Y) < angle_min)
+    {
+        //PID computation
+        error = Y - consigne ;                  //Compute the error 
+        p = kP * error ;                        //Compute the P compensation
+        d = kD * (error - previous_error);      //----------- D compensation
+        //I missing                             //----------- I compensation 
+        previous_error = error ;                //Update the previous error 
+
+        stepper.set_periode(0, p);              //Update the speed for each motors
+        stepper.set_periode(1, p);
+    }
+    else 
+    {
+        stepper.set_periode(0, 0);              //Update the speed for each motors
+        stepper.set_periode(1, 0);
+    }
+    //Serial.println(p);
+
     //Frequence regulation here 
     while(micros()<loop_timer + 1000000/frequence);
     loop_timer = micros();
     
-    
-    
-    
-
 }
+
+

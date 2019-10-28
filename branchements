@@ -6,3 +6,9 @@ sens D12
 right motor
 step D10
 sens D9
+
+//Motor's pins
+#define pin_left_step 11
+#define pin_right_step 10
+#define pin_left_dir 12
+#define pin_right_dir 9
