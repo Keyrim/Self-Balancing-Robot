@@ -9,7 +9,7 @@ Stepper_moteur::Stepper_moteur(){
 //the speed is given in degrees per seconds 
 void Stepper_moteur::set_periode(byte m, float speed)
 {
-   if (abs(speed) < 50)
+   if (abs(speed) < 10)
   {
     moteur_actifs[m] = false;
   }
@@ -76,14 +76,14 @@ void Stepper_moteur::timer_interupt()
 void Stepper_moteur::moove(byte moteur)
 {
   digitalWrite(dir_pin[moteur], moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
-  digitalWrite(step_pin[moteur], HIGH);                   //On envoi une impulsions pour que le moteur fasse un pas 
-  //delayMicroseconds();
+  digitalWrite(step_pin[moteur], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
+  delayMicroseconds(1);
   digitalWrite(step_pin[moteur], LOW);
 }
 
 unsigned int Stepper_moteur::born_timer(unsigned int in_timer)
 {
-  if(in_timer < 1999)return 3999;
+  if(in_timer < 500)return 500;
   else if (in_timer > 65000)return 65000;
   else return in_timer;
 }

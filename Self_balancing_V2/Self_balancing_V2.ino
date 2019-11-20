@@ -23,8 +23,9 @@ float AcX, AcY, AcZ, GyX=0, GyY=0, GyZ=0;
 float X=0, Y=0;
 
 //Pid 
-#define angle_min 5                         //The robot compensate before reaching this angle 
-const float kP = 300 , kI = 0 , kD = 0 ;
+#define angle_max 35                         //The robot doesnt compensate anymore after this angle
+#define angle_min 2
+const float kP = 200 , kI = 0 , kD = 0 ;
 float p, i = 0 , d ;
 float consigne = 0 ;
 float corection = 0 ;
@@ -116,7 +117,7 @@ void loop()
     Y += GyX / frequence ;
     Y = Y * 0.996 + (AcY + 2.33) * 0.004;   
 
-    if(abs(Y) < angle_min)
+    if(abs(Y) < angle_max && abs(Y) > angle_min)
     {
         //PID computation
         error = Y - consigne ;                  //Compute the error 
@@ -133,7 +134,7 @@ void loop()
         stepper.set_periode(0, 0);              //Update the speed for each motors
         stepper.set_periode(1, 0);
     }
-    //Serial.println(p);
+     Serial.println(Y);
 
     //Frequence regulation here 
     while(micros()<loop_timer + 1000000/frequence);

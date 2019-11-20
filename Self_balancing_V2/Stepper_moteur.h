@@ -5,7 +5,7 @@
 
 //Must precise the number of motor used to not loose time in the interuption routine
 #define number_of_motor  2
-#define dregrees_per_steps 1.8
+#define dregrees_per_steps 0.9
 
 class Stepper_moteur
 {
