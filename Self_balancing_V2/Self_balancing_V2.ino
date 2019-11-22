@@ -12,6 +12,8 @@ unsigned long loop_timer = 0 ;
 #define pin_left_dir 12
 #define pin_right_dir 9
 
+
+
 //Create a stepper_moteur object
 Stepper_moteur stepper ;
 
@@ -93,10 +95,10 @@ void setup()
     //Initialize our stepper_class 
     stepper.initialize_stepper(0,pin_left_step, pin_left_dir );
     stepper.initialize_stepper(1,pin_right_step, pin_right_dir );
-    stepper.set_periode(0, 2000);
-    stepper.set_periode(1, 2000);
+    stepper.set_speed(0, 2000);
+    stepper.set_speed(1, 2000);
     stepper.initialize_timer();
-
+    stepper.set_micro_stepping(8);
     //Initialize the MPU6050
 
 }
@@ -126,15 +128,16 @@ void loop()
         //I missing                             //----------- I compensation 
         previous_error = error ;                //Update the previous error 
 
-        stepper.set_periode(0, p);              //Update the speed for each motors
-        stepper.set_periode(1, p);
+        stepper.set_speed(0, p);              //Update the speed for each motors
+        stepper.set_speed(1, p);
     }
     else 
     {
-        stepper.set_periode(0, 0);              //Update the speed for each motors
-        stepper.set_periode(1, 0);
+        //Update the speed for each motors
+        stepper.set_speed(0, 0);              
+        stepper.set_speed(1, 0);
     }
-     Serial.println(Y);
+    //Serial.println(Y);
 
     //Frequence regulation here 
     while(micros()<loop_timer + 1000000/frequence);

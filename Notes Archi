@@ -1,0 +1,11 @@
+Micro Stepping 
+
+
+//Timer
+    Prescaler = huit pour pouvoir une vitesse min très faible
+
+
+//Micro Stepping
+
+
+Environ 30 micro pour effectuer l'interupt
