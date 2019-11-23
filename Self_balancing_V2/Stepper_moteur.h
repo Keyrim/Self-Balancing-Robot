@@ -31,6 +31,7 @@ class Stepper_moteur
     
     
   //Public Variables
+  unsigned int timer_consigne[number_of_motor];   //Store the periode of each motor
 
   private:
   //Private Functions
@@ -46,7 +47,7 @@ class Stepper_moteur
 
     //Utilisé niveau de l'interuption
     unsigned int timer_compteur[number_of_motor] ;  //Timer to remember how much time is left before the next step        
-    unsigned int timer_consigne[number_of_motor];   //Store the periode of each motor
+    
     byte micrro_stepping_div = 1 ;                  //We devide 1,8 by this to know what a step means in term of degrees, required for the speed 
     
     

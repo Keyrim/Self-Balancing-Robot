@@ -26,11 +26,10 @@ float X=0, Y=0;
 
 //Pid 
 #define angle_max 35                         //The robot doesnt compensate anymore after this angle
-#define angle_min 2
-const float kP = 200 , kI = 0 , kD = 0 ;
+#define angle_min 0.3
+const float kP = 150 , kI = 0.00 , kD = 0 ;
 float p, i = 0 , d ;
 float consigne = 0 ;
-float corection = 0 ;
 float previous_error = 0 , error ;
 
 //read the mpu 
@@ -60,13 +59,14 @@ void read_mpu()
     GyX = (Wire.read()<<8|Wire.read())/65.5;
     GyY = (Wire.read()<<8|Wire.read())/65.5;  
     GyZ = (Wire.read()<<8|Wire.read())/65.5;  
+    
 
 } 
 
 
 void setup()
 {
-    Serial.begin(115200);
+    Serial.begin(1000000);
     // Wake up the mpu 
     Wire.begin();
     Wire.beginTransmission(MPU);
@@ -101,11 +101,14 @@ void setup()
     stepper.set_micro_stepping(8);
     //Initialize the MPU6050
 
+    
+
 }
 
 ISR(TIMER1_COMPA_vect)
 {     
     stepper.timer_interupt();
+    
 }
 
 void loop()
@@ -117,19 +120,18 @@ void loop()
     
     //Complementary filter
     Y += GyX / frequence ;
-    Y = Y * 0.996 + (AcY + 2.33) * 0.004;   
-
-    if(abs(Y) < angle_max && abs(Y) > angle_min)
+    Y = Y * 0.996 + (AcY ) * 0.004;   
+    error = Y - consigne ;                  //Compute the error 
+    if(abs(error) < angle_max && abs(error) > angle_min)
     {
-        //PID computation
-        error = Y - consigne ;                  //Compute the error 
+        //PID computation        
         p = kP * error ;                        //Compute the P compensation
         d = kD * (error - previous_error);      //----------- D compensation
-        //I missing                             //----------- I compensation 
+        i += kI * error ;                       //----------- I compensation
         previous_error = error ;                //Update the previous error 
 
-        stepper.set_speed(0, p);              //Update the speed for each motors
-        stepper.set_speed(1, p);
+        stepper.set_speed(0, p+i);              //Update the speed for each motors
+        stepper.set_speed(1, p+i);
     }
     else 
     {
@@ -137,7 +139,13 @@ void loop()
         stepper.set_speed(0, 0);              
         stepper.set_speed(1, 0);
     }
-    //Serial.println(Y);
+
+    
+    Serial.print(Y);
+    Serial.print("\t");
+    Serial.print(p);
+    Serial.print("\t");
+    Serial.println(i);
 
     //Frequence regulation here 
     while(micros()<loop_timer + 1000000/frequence);

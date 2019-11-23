@@ -23,7 +23,6 @@ void Stepper_moteur::set_micro_stepping(byte divider){
     break;
   case 8:
     output = B00000011 ;
-    Serial.println("case 8");
     break;
   case 16:
     output = B00000111 ;
@@ -33,8 +32,7 @@ void Stepper_moteur::set_micro_stepping(byte divider){
     output = B00000000 ;
     break;
   }
-  Serial.println((output & B00000010)>>1);
-  digitalWrite(MS1, (output & B00000001));
+  digitalWrite(MS1, (output & B00000001)); 
   digitalWrite(MS2, (output & B00000010)>>1);
   digitalWrite(MS3, (output & B00000100)>>2);
 }
@@ -42,6 +40,7 @@ void Stepper_moteur::set_micro_stepping(byte divider){
 //the speed is given in degrees per seconds 
 void Stepper_moteur::set_speed(byte m, float speed)
 {
+    
    if (abs(speed) < 10)
   {
     //Si on est trop lent autant ne rien faire
@@ -55,9 +54,12 @@ void Stepper_moteur::set_speed(byte m, float speed)
     //Détermine le sens en fonction du signe de la vitesse 
     moteur_direction[m] = speed > 0 ;
   }
-  unsigned int frequency = (abs(speed) * micrro_stepping_div) / dregrees_per_steps ;
+  float frequency = (abs(speed) * micrro_stepping_div) ; 
+  frequency /=  dregrees_per_steps ;
+  
   //The 8 comes from the prescaler set in the initialize_timer function
-  timer_consigne[m] = born_timer(16000000 / (8 * frequency));
+  timer_consigne[m] = born_timer((16000000 / (8 * frequency)));
+  
   if(timer_compteur[m] == 0)timer_compteur[m] = timer_consigne[m];
 
 }
@@ -99,12 +101,12 @@ void Stepper_moteur::initialize_timer()
 //Timer 1 interuption making our motors mooving at the right speed 
 void Stepper_moteur::timer_interupt()
 {
-  digitalWrite(MS1, 1);
+  //Serial.print(micros());
   unsigned int min = 65535;
-    for(byte m=0; m < number_of_motor; m ++)
+    for(byte m=1; m < number_of_motor; m ++)
     {
       timer_compteur[m] -= actual_OCR1A ;
-      if(timer_compteur[m] == 0)
+      if(timer_compteur[m] < 40)
       {
         timer_compteur[m] = timer_consigne[m];
         if(moteur_actifs[m])moove(m);
@@ -112,9 +114,13 @@ void Stepper_moteur::timer_interupt()
       min = min(min, timer_compteur[m]);
 
     }
+  //Serial.print("\t");
+  //Serial.println(micros());
+  
+  
   actual_OCR1A = min ;
   OCR1A = min ;
-  digitalWrite(MS1, 0);
+  //digitalWrite(MS1, 0);
 }
 
 //The desired motor mooves in the direction according to moteur_direction[moteur] private variable
@@ -129,7 +135,7 @@ void Stepper_moteur::moove(byte moteur)
 //Private function, we dont want our target compter to be 1 cuz it sux 
 unsigned int Stepper_moteur::born_timer(unsigned int in_timer)
 {
-  if(in_timer < 300)return 300;
+  if(in_timer < 99)return 99;
   else if (in_timer > 65000)return 65000;
   else return in_timer;
 }
