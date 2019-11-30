@@ -127,10 +127,10 @@ void Stepper_moteur::timer_interupt()
 void Stepper_moteur::moove(byte moteur)
 {
   digitalWrite(dir_pin[moteur], moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
-   digitalWrite(dir_pin[moteur+1], moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
+   digitalWrite(dir_pin[moteur+1], !moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
   digitalWrite(step_pin[moteur], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
   digitalWrite(step_pin[moteur+1], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
-  delayMicroseconds(1);
+  delayMicroseconds(10);
   digitalWrite(step_pin[moteur], LOW);
   digitalWrite(step_pin[moteur+1], LOW);
 

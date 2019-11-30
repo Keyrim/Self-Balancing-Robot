@@ -7,6 +7,11 @@
 #include <Wire.h>   
 unsigned long loop_timer = 0 ;
 
+//Variable resistor pin
+#define pin_Analog_P 1
+#define pin_Analog_I 2
+#define pin_Analog_D 3
+
 //Motor's pins
 #define pin_left_step 11
 #define pin_right_step 10
@@ -14,6 +19,24 @@ unsigned long loop_timer = 0 ;
 #define pin_right_dir 9
 
 
+#define ACY_compensation 2.6 //Si part trop en avant à augmenter si trop en arrière à diminuer
+
+//Pid 
+#define angle_max 30                         //The robot doesnt compensate anymore after this angle
+#define angle_min 0
+float kP = 170 , kI = 12, kD = 0 ;
+float p, i = 0 , d ;
+float consigne = 0 ;
+float previous_error = 0 , error ;
+
+#define min_kP 140
+#define max_kP 220
+
+#define min_kI 5
+#define max_kI 15
+
+#define min_kD 0
+#define max_kD 10
 
 //Create a stepper_moteur object
 Stepper_moteur stepper ;
@@ -25,13 +48,17 @@ const int frequence = 250; //Frequence of the loop in hz
 float AcX, AcY, AcZ, GyX=0, GyY=0, GyZ=0;
 float X=0, Y=0;
 
-//Pid 
-#define angle_max 35                         //The robot doesnt compensate anymore after this angle
-#define angle_min 0.3
-const float kP = 180 , kI = 1 , kD = 0 ;
-float p, i = 0 , d ;
-float consigne = 0 ;
-float previous_error = 0 , error ;
+
+
+/*
+    states
+0   Arret, moteur ON , changement par bouton
+1   En marche, compensation active 
+2   Dead band, angle trop faible
+3   Arret, moteur ON, angle trop important
+*/
+
+byte state = 1 ;
 
 //read the mpu 
 void read_mpu()
@@ -121,30 +148,48 @@ void loop()
     
     //Complementary filter
     Y += GyX / frequence ;
-    Y = Y * 0.996 + (AcY ) * 0.004;   
-    error = Y - consigne ;                  //Compute the error 
-    if(abs(error) < angle_max && abs(error) > angle_min)
-    {
-        //PID computation        
+    Y = Y * 0.996 + (AcY + ACY_compensation) * 0.004;   
+        
+    if(abs(error) > angle_max  )
+        //coupe les moteurs car angle trop important
+        state = 2;
+    else if(abs(error) < angle_min)
+        //On stope la compensation car angle trop faible
+        state = 2;
+    else 
+        //On est dans l'interval donc on compense
+        state = 1;
+
+    //Guess the P I D values aacording to the potentiometer
+    kP = (float)map(analogRead(pin_Analog_P), 1023, 0, min_kP*1000, max_kP*1000) / 1000.0;
+    kI = (float)map(analogRead(pin_Analog_I), 1023, 0, min_kI*1000, max_kI*1000) / 1000.0;
+    kD = (float)map(analogRead(pin_Analog_D), 1023, 0, min_kD*1000, max_kD*1000) / 1000.0;
+
+    switch(state){
+
+    case 0 :    //Moteur à l'arret on attent le switch 
+        stepper.set_speed(0, 0); 
+        break;
+
+    case 1 :    //Compensation active
+        //PID computation   
+        error = Y - consigne ;                  //Compute the error      
         p = kP * error ;                        //Compute the P compensation
         d = kD * (error - previous_error);      //----------- D compensation
         i += kI * error ;                       //----------- I compensation
         previous_error = error ;                //Update the previous error 
+        stepper.set_speed(0, p+i);              //Update the speed for each motors        
+        break;
 
-        stepper.set_speed(0, p+i);              //Update the speed for each motors
+    case 2 :    //Angle trop faible ou trop fort on ne compense pas 
+        stepper.set_speed(0, 0); 
+        break;
     }
-    else 
-    {
-        //Update the speed for each motors
-        stepper.set_speed(0, 0);  
-    }
-
-    
-    Serial.print(Y);
+    Serial.print(analogRead(1));
     Serial.print("\t");
-    Serial.print(p);
+    Serial.print(analogRead(2));
     Serial.print("\t");
-    Serial.println(i);
+    Serial.println(analogRead(3));
 
     //Frequence regulation here 
     while(micros()<loop_timer + 1000000/frequence);
