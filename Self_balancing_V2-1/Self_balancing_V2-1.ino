@@ -23,7 +23,7 @@ unsigned long loop_timer = 0 ;
 
 //Pid 
 #define angle_max 30                         //The robot doesnt compensate anymore after this angle
-#define angle_min 0
+#define angle_min 5
 float kP = 170 , kI = 12, kD = 0 ;
 float p, i = 0 , d ;
 float consigne = 0 ;
@@ -161,9 +161,9 @@ void loop()
         state = 1;
 
     //Guess the P I D values aacording to the potentiometer
-    kP = (float)map(analogRead(pin_Analog_P), 1023, 0, min_kP*1000, max_kP*1000) / 1000.0;
-    kI = (float)map(analogRead(pin_Analog_I), 1023, 0, min_kI*1000, max_kI*1000) / 1000.0;
-    kD = (float)map(analogRead(pin_Analog_D), 1023, 0, min_kD*1000, max_kD*1000) / 1000.0;
+    kP = (long)map(analogRead(pin_Analog_P), 0, 1023, (long)min_kP*1000, (long)max_kP*1000) / 1000.0;
+    kI = (long)map(analogRead(pin_Analog_I), 0, 1023, (long)min_kI*1000, (long)max_kI*1000) / 1000.0;
+    kD = (long)map(analogRead(pin_Analog_D), 0, 1023, (long)min_kD*1000, (long)max_kD*1000) / 1000.0;
 
     switch(state){
 
@@ -185,11 +185,11 @@ void loop()
         stepper.set_speed(0, 0); 
         break;
     }
-    Serial.print(analogRead(1));
+    Serial.print(kP);
     Serial.print("\t");
-    Serial.print(analogRead(2));
+    Serial.print(kI);
     Serial.print("\t");
-    Serial.println(analogRead(3));
+    Serial.println(kD);
 
     //Frequence regulation here 
     while(micros()<loop_timer + 1000000/frequence);
