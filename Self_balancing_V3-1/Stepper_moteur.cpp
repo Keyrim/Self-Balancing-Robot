@@ -53,6 +53,8 @@ void Stepper_moteur::set_speed(byte m, float speed)
     moteur_actifs[m] = true;
     //Détermine le sens en fonction du signe de la vitesse 
     moteur_direction[m] = speed > 0 ;
+    if(speed > max_speed)speed = max_speed;
+    else if(speed < -max_speed)speed = - max_speed;
   }
   float frequency = (abs(speed) * micrro_stepping_div) ; 
   frequency /=  dregrees_per_steps ;

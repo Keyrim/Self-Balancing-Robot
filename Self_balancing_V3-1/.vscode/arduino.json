@@ -1,6 +1,6 @@
 {
-    "port": "COM6",
+    "port": "COM9",
     "board": "arduino:avr:nano",
     "configuration": "cpu=atmega328",
-    "sketch": "Self_balancing_V2-1.ino"
+    "sketch": "Self_balancing_V3-1.ino"
 }

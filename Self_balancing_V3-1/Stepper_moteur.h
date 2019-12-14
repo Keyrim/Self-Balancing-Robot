@@ -7,6 +7,10 @@
 #define MS2 7
 #define MS1 6
 
+//Acceleration in degrees per seconds squared
+#define acceleration_motor_max 50 
+#define max_speed 3000
+
 
 
 //Must precise the right number of motor used to not loose time in the interuption routine
@@ -44,6 +48,7 @@ class Stepper_moteur
     bool moteur_actifs[number_of_motor];            //Boolean to know if the motor as to spin or not
     bool moteur_direction[number_of_motor];         //Boolean to know, if the  motor is spinning, in wich way he spins
     unsigned int actual_OCR1A = 65535 ;
+    int previous_speed = 0 ;                        //Used to check if the acceleration is not to high for that por motor 
 
     //Utilisé niveau de l'interuption
     unsigned int timer_compteur[number_of_motor] ;  //Timer to remember how much time is left before the next step        

@@ -11,9 +11,9 @@ void setup()
 void loop()
 {
     digitalWrite(step_pin, HIGH);
-    delay(1000);    
+    delay(1);    
     digitalWrite(step_pin, LOW);
-    delay(1000);
+    delay(1);
     
 
 }
