@@ -5,7 +5,8 @@ Stepper_moteur::Stepper_moteur(){
   
 }
 
-//Value must be 1, 2, 4, 8, 16 for the microstepping
+//                                                      MICRO STEPPING
+//Value must be 1, 2, 4, 8, 16 for the microstepping                          
 void Stepper_moteur::set_micro_stepping(byte divider){
   micrro_stepping_div = divider ;
   for(int p = 0; p < 3; p++)pinMode(MS1 + p, OUTPUT);
@@ -37,7 +38,9 @@ void Stepper_moteur::set_micro_stepping(byte divider){
   digitalWrite(MS3, (output & B00000100)>>2);
 }
 
-//the speed is given in degrees per seconds 
+
+//                                                                                                             SET SPEED
+//the speed must be given in degrees per seconds 
 void Stepper_moteur::set_speed(byte m, float speed)
 {
     
@@ -75,7 +78,8 @@ void Stepper_moteur::initialize_stepper(byte m, byte step, byte dir)
   pinMode(dir, OUTPUT);
 }
 
-//Initialize the timer 1
+//                                                                                                              TIMER INIT
+//Initialize the timer 1 for the it routine
 void Stepper_moteur::initialize_timer()
 {
   //Prescaler set at 8 
@@ -100,46 +104,63 @@ void Stepper_moteur::initialize_timer()
   sei();//allow interrupts
 }
 
+
+//                                                                                                                       INTERUPTION 
 //Timer 1 interuption making our motors mooving at the right speed 
 void Stepper_moteur::timer_interupt()
 {
-  //Serial.print(micros());
+  
+  //it_duration = micros();
   unsigned int min = 65535;
-    for(byte m=0; m < 1; m ++)
+    for(byte m=0; m < number_of_motor; m ++)
     {
       timer_compteur[m] -= actual_OCR1A ;
-      if(timer_compteur[m] < 40)
+      if(timer_compteur[m] < actual_OCR1A)
       {
-        timer_compteur[m] = timer_consigne[m];
-        if(moteur_actifs[m])moove(m);
+        timer_compteur[m] = timer_consigne[m];        
+        if(moteur_actifs[m])
+          moove(m);
       }
       min = min(min, timer_compteur[m]);
 
     }
-  //Serial.print("\t");
-  //Serial.println(micros());
   
   
-  actual_OCR1A = min ;
-  OCR1A = min ;
-  //digitalWrite(MS1, 0);
+  //it_duration = micros() - it_duration ;
+  //actual_OCR1A = min ;
+  //OCR1A = min ;
 }
 
+//                                                                                                                    Moove function
 //The desired motor mooves in the direction according to moteur_direction[moteur] private variable
+
+
 void Stepper_moteur::moove(byte moteur)
 {
-  digitalWrite(dir_pin[moteur], !moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
-   digitalWrite(dir_pin[moteur+1], moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
-  digitalWrite(step_pin[moteur], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
-  digitalWrite(step_pin[moteur+1], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
-  delayMicroseconds(10);
-  digitalWrite(step_pin[moteur], LOW);
-  digitalWrite(step_pin[moteur+1], LOW);
+  //Management using ports 
 
- 
+  //   HIGH STEP
+  PORTB |= 1 << (3 - 2*moteur);
+  
+  //    DIRECTION
+  if(previous_moteur_direction[moteur] == !moteur_direction[moteur])
+  {    
+    if(moteur_direction[moteur])
+      PORTB |= 1 << (4 - 2*moteur);
+         
+    else
+      PORTB &= ~(1 << (4 - 2*moteur));
+       
+  }
+  delayMicroseconds(4);
+  //LOW STEP
+  PORTB &= ~(1 << (3 - 2*moteur));
+  
+
+  previous_moteur_direction[moteur] = moteur_direction[moteur] ;
 }
 
-//Private function, we dont want our target compter to be 1 cuz it sux 
+//Check if the timer isnt 1 cuz it would be a mess else
 unsigned int Stepper_moteur::born_timer(unsigned int in_timer)
 {
   if(in_timer < 99)return 99;

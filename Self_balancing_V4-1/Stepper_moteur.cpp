@@ -37,6 +37,8 @@ void Stepper_moteur::set_micro_stepping(byte divider){
   digitalWrite(MS3, (output & B00000100)>>2);
 }
 
+
+//                                                                                                             SET SPEED
 //the speed is given in degrees per seconds 
 void Stepper_moteur::set_speed(byte m, float speed)
 {
@@ -75,6 +77,7 @@ void Stepper_moteur::initialize_stepper(byte m, byte step, byte dir)
   pinMode(dir, OUTPUT);
 }
 
+//                                                                                                              TIMER INIT
 //Initialize the timer 1
 void Stepper_moteur::initialize_timer()
 {
@@ -100,10 +103,13 @@ void Stepper_moteur::initialize_timer()
   sei();//allow interrupts
 }
 
+
+//                                                                                                                       TIMER IT 
 //Timer 1 interuption making our motors mooving at the right speed 
 void Stepper_moteur::timer_interupt()
 {
-  //Serial.print(micros());
+  
+  it_duration = micros();
   unsigned int min = 65535;
     for(byte m=0; m < 1; m ++)
     {
@@ -111,32 +117,72 @@ void Stepper_moteur::timer_interupt()
       if(timer_compteur[m] < 40)
       {
         timer_compteur[m] = timer_consigne[m];
+        
         if(moteur_actifs[m])moove(m);
       }
       min = min(min, timer_compteur[m]);
 
     }
-  //Serial.print("\t");
-  //Serial.println(micros());
   
   
+  it_duration = micros() - it_duration ;
   actual_OCR1A = min ;
   OCR1A = min ;
-  //digitalWrite(MS1, 0);
 }
 
+//                                                                                                                    Moove function
 //The desired motor mooves in the direction according to moteur_direction[moteur] private variable
+
+
 void Stepper_moteur::moove(byte moteur)
 {
-  digitalWrite(dir_pin[moteur], !moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
-   digitalWrite(dir_pin[moteur+1], moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
+  /*
+  //check if the DIRECTION changed
+  if(previous_moteur_direction[moteur] != moteur_direction[moteur])
+  {
+    digitalWrite(dir_pin[moteur], !moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
+    digitalWrite(dir_pin[moteur+1], moteur_direction[moteur]);     //On met le pin de direction dans le bon etat
+
+
+  }
+
+  //PULSAITION génération
+  
   digitalWrite(step_pin[moteur], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
   digitalWrite(step_pin[moteur+1], HIGH);                        //On envoi une impulsions pour que le moteur fasse un pas 
-  delayMicroseconds(10);
+  it_duration = micros() - it_duration ;
   digitalWrite(step_pin[moteur], LOW);
   digitalWrite(step_pin[moteur+1], LOW);
+  */
 
- 
+  
+  //Management using ports 
+
+  //   HIGH STEP
+  PORTB |= 1 << (3 - 2*moteur);
+  PORTB |= 1 << (3 - 2);
+  
+  //    DIRECTION
+  if(previous_moteur_direction[moteur] == !moteur_direction[moteur])
+  {    
+    if(moteur_direction[moteur]){      
+      PORTB &= ~(1 << (4 - 2*moteur));
+      PORTB |= 1 << (4 - 2);
+    }
+      
+    else{
+      PORTB |= 1 << (4 - 2*moteur);
+      PORTB &= ~(1 << (4 - 2));
+    }
+      
+  }
+  //delayMicroseconds(4);
+  //LOW STEP
+  PORTB &= ~(1 << (3 - 2*moteur));
+  PORTB &= ~(1 << (3 - 2));
+  
+
+  previous_moteur_direction[moteur] = moteur_direction[moteur] ;
 }
 
 //Private function, we dont want our target compter to be 1 cuz it sux 

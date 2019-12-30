@@ -1,8 +1,19 @@
-//4th version, this time using the stepper_moteur class wich is based on interuption timer
-//Both motors are handeled as once
-//Add the bluetooth
-//Add acceleration control
-//Add rc control 
+//Description
+//5th version, GOAL : same as the latest one but now :
+//-- Motors are not controlled as one motor anymore, this way we can turn ehe 
+//-- The main idea here is to see what is the max computation power i have 
+//-- Once i know how much computation power i have left, we know if we swap on an STM32, or if i keep the arduino with a raspberry pi zero module to make wireless etc 
+//-- This new code has to :
+//      Manage motors separately :          IN PROGRESS
+//      Log w/e i want on a raspberry :     TODO
+
+
+// ----------------------------------------------TASK LIST--------------------------------------------
+//IS the MAE worth it ? probably not                                                    TODO
+//test how much time it takes to execute the it used by the motor control system        VERY LOW DURATION UNDER 10 < micro sec
+//replace every digitalWrite by two port register control in it                         DONE, WORKING WELL
+//Swap back in two motors mode                                                          TODO, DONE IN THE COMMING VERSION
+
 
 #include <SoftwareSerial.h>
 
@@ -18,11 +29,12 @@ unsigned long loop_timer = 0 ;
 #define pin_Analog_I 6
 #define pin_Analog_D 7
 
-//Motor's pins
-#define pin_right_step 9
+//Motors Pinout, motor 0 is the left one and motor 1 is the right one 
+#define pin_right_step 9 // also 
 #define pin_right_dir 10
 #define pin_left_step 11
 #define pin_left_dir 12
+
 
 //Gloabl Parameters
 #define ACY_compensation 4 //Si part trop en avant à augmenter si trop en arrière à diminuer
@@ -39,6 +51,7 @@ float previous_error_angle = 0 , error_angle = 0 ;
 #define max_kP_vitesse 20
 #define max_kI_vitesse 0.001
 #define max_kD_vitesse 50
+#define max_pid_vitesse max_speed  //Max_speed is defined in sttpper_moteur.has
 
 //Pid consigne angle 
 float kP_angle = 0, kI_angle= 0 , kD_angle = 0 ;
@@ -50,8 +63,9 @@ byte pid_angle_compteur = 0 ;
 //Parameters
 //Coefficients divisé par 1000 à terme 
 #define max_kP_angle 10 
-#define max_kI_angle 0.001
+#define max_kI_angle 0.1
 #define max_kD_angle 70
+#define max_pid_angle 20 
 
 
 //bluetooth 
@@ -66,7 +80,9 @@ SoftwareSerial bt(tx, rx);
 const byte number_of_chanel = 11 ;
 byte actual_chanel = 0 ;
 unsigned long previous_timer_rising = 0 ;
-unsigned int  chanels[number_of_chanel] = {1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500, 1500} ;
+unsigned int  chanels[number_of_chanel] ;
+
+int tourner = 100 ;
 
 //Create a stepper_moteur object    
 Stepper_moteur stepper ;
@@ -87,6 +103,25 @@ float X=0, Y=0;
 */
 
 byte state = 1 ;
+
+float borne_float(float to_born, float min, float max)
+{
+    if(to_born > max)
+        return max;
+    if(to_born < min)
+        return min ;
+    return to_born ;
+}
+
+float borne_long(long to_born, long min, long max)
+{
+    if(to_born > max)
+        return max;
+    if(to_born < min)
+        return min ;
+    return to_born ;
+}
+
 
 
 //read the mpu 
@@ -124,13 +159,15 @@ void read_mpu()
 void setup()
 {
     
-    //Serial Liaison
+    //                                                      SERIAL PART
     Serial.begin(1000000);
+    Serial.println("c est le debut");
     /*
     //Bt conection
     bt.begin(BTSPEED);
     bt.println("Début du programe");
     */
+    //                                                      MPU6050 INIT PART
     // Wake up the mpu 
     Wire.begin();
     Wire.beginTransmission(MPU);
@@ -140,7 +177,7 @@ void setup()
 
     //Set up the accelerometer
     //1g = 8192
-    //+- 4g
+    //+- 4g     
     Wire.beginTransmission(MPU);
     Wire.write(0x1C);
     Wire.write(0x08);
@@ -156,16 +193,17 @@ void setup()
 
     delay(100);
 
+    //                                                      STEPPER INIT PART PART
     //Initialize our stepper_class 
-    stepper.initialize_stepper(0,pin_left_step, pin_left_dir );
-    stepper.initialize_stepper(1,pin_right_step, pin_right_dir );
-    stepper.set_speed(0, 2000);
-    stepper.set_speed(1, 2000);
+    stepper.initialize_stepper(0,pin_left_step, pin_left_dir );         //Define the stepper 0 as the left one 
+    stepper.initialize_stepper(1,pin_right_step, pin_right_dir );       //And the stepper 1 as the right one
+    stepper.set_speed(0, 0);
+    stepper.set_speed(1, 0);
     stepper.initialize_timer();
-    stepper.set_micro_stepping(8);
-    //Initialize the MPU6050
+    stepper.set_micro_stepping(4);
 
-    //      PPM signal setup
+
+    //                                                      PPM IT INIT PART
     attachInterrupt(digitalPinToInterrupt(interupt_ppm_pin), rising, RISING);
     
 
@@ -208,13 +246,15 @@ void loop()
     kD_angle = max_kD_angle - ((float)analogRead(pin_Analog_P)*max_kD_angle)/1023.0;
 
     //Vitesse_consigne 
-    consigne_vitesse = -7 * ((int)chanels[2] - 1500) ;
+    consigne_vitesse = -5 * ((int)chanels[2] - 1500) ;
+    tourner =  ((int)chanels[1] - 1500) ;
 
 
     // ================================== MAIN SWITCH ===============================================
     switch(state){
     case 0 :    //Moteur à l'arret on attent le switch 
         stepper.set_speed(0, 0); 
+        stepper.set_speed(1, 0); 
         break;
 
     case 1 :    //Compensation active
@@ -228,13 +268,18 @@ void loop()
         d_angle = kD_angle * (error_vitesse - previous_error_vitesse);
         previous_error_vitesse = error_vitesse ;
         pid_angle = p_angle + i_angle + d_angle ;
+
+        //this part allows the system to wait 1 sec before starting to follow the speed order given by the user on the rc remote
+        //This way, the system has the time to stabalize it self on the center and then start mooving
         if(pid_angle_compteur < 250){
             pid_angle_compteur ++ ;
             pid_angle = 0 ;
         }else
             pid_angle /= 1000 ;
-
+        
+        pid_angle = borne_float(pid_angle, -max_pid_angle, max_pid_angle);
         consigne_angle = pid_angle ;
+        
 
         //Second pid on corige la consigne de la vitesse des roues / des moteurs
         error_angle = Y - consigne_angle ;                                          //Compute the error      
@@ -243,25 +288,56 @@ void loop()
         d_vitesse = kD_vitesse * (error_angle - previous_error_angle);              //----------- D compensation
         previous_error_angle = error_angle ;                                        //Update the previous error 
         pid_vitesse += p_vitesse + i_vitesse + d_vitesse ;                          //Pid comande l'accélération, on doit l'intégre pour avoir la consigne de la vitesse d'où la somme 
+        pid_vitesse = borne_float(pid_vitesse, -max_pid_vitesse, max_pid_vitesse);
 
         //Update the motor's speed    
-        stepper.set_speed(0, pid_vitesse );                
-
+        // Speed in oppostie direction because motors are in my case conected in the opposite way
+        stepper.set_speed(0, -pid_vitesse + tourner);                
+        stepper.set_speed(1, pid_vitesse + tourner); 
 
         break;
 
     case 2 :    //Angle trop faible ou trop fort on ne compense pas 
-        stepper.set_speed(0, 0); 
+        stepper.set_speed(0, 0);
+        stepper.set_speed(1, 0); 
+
+        //Set every thing back to zero as a reset would do 
+       
+        pid_angle_compteur = 0 ;
+
+        pid_vitesse = 0 ;
+        p_vitesse = 0 ;
+        i_vitesse = 0 ; 
+        d_vitesse = 0 ;
+        error_vitesse = 0 ;
+        previous_error_vitesse = 0 ;
+
+        pid_angle = 0;
+        p_angle = 0 ;
+        i_angle = 0 ;
+        d_angle = 0 ;
+        error_angle = 0;
+        previous_error_angle = 0 ;
+
         break;
     }
+
+
     //Afficher les donné que l'on veut 
-        
-        Serial.print(pid_vitesse);
-        Serial.print("\t");
-        Serial.print(consigne_vitesse);
-        Serial.print("\t");
-        Serial.println(error_vitesse);
+    /*
+    Serial.print(Y);
+    Serial.print("\t");
+    Serial.print(pid_vitesse);
+    Serial.print("\t");
+    Serial.println(kD_angle);
+    */
     //bt.println((String)chanels[1]+ ";" + (String)kD_angle +  ";" + (String)d_angle ); //+ ";" + (String)(micros() - loop_timer)); 
+
+    //
+    //Serial.println((String)stepper.it_duration );
+    //Serial.println(pid_vitesse);
+    //Frequency regulation
+    Serial.println(micros() - loop_timer);
     while(micros()<loop_timer + 1000000/frequence);
     loop_timer = micros();
     
