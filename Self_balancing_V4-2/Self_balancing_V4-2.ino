@@ -3,17 +3,18 @@
 //-- Motors are not controlled as one motor anymore, this way we can turn ehe 
 //-- The main idea here is to see what is the max computation power i have 
 //-- Once i know how much computation power i have left, we know if we swap on an STM32, or if i keep the arduino with a raspberry pi zero module to make wireless etc 
-//-- This new code has to :
-//      Manage motors separately :          IN PROGRESS
+//-- This new code has to : 
+//      TURN :                              DONE
 //      Log w/e i want on a raspberry :     TODO
 
 
 // ----------------------------------------------TASK LIST--------------------------------------------
 //IS the MAE worth it ? probably not                                                    TODO
-//test how much time it takes to execute the it used by the motor control system        VERY LOW DURATION UNDER 10 < micro sec
-//replace every digitalWrite by two port register control in it                         DONE, WORKING WELL
-//Swap back in two motors mode                                                          TODO, DONE IN THE COMMING VERSION
-
+//Motors working separately                                                             DONE
+//Control digital outputs using registers                                               DONE 
+//Turning on a side                                                                     DONE 
+//Smooth the RC input with a mooving average                                            IN PROGRESS
+//Limit PID outputs                                                                     TODO
 
 #include <SoftwareSerial.h>
 
@@ -246,7 +247,7 @@ void loop()
     kD_angle = max_kD_angle - ((float)analogRead(pin_Analog_P)*max_kD_angle)/1023.0;
 
     //Vitesse_consigne 
-    consigne_vitesse = -5 * ((int)chanels[2] - 1500) ;
+    consigne_vitesse = -7 * ((int)chanels[2] - 1500) ;
     tourner =  ((int)chanels[1] - 1500) ;
 
 
@@ -337,7 +338,7 @@ void loop()
     //Serial.println((String)stepper.it_duration );
     //Serial.println(pid_vitesse);
     //Frequency regulation
-    Serial.println(micros() - loop_timer);
+    Serial.println(chanels[2]);
     while(micros()<loop_timer + 1000000/frequence);
     loop_timer = micros();
     

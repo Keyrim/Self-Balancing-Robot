@@ -71,7 +71,7 @@ class Stepper_moteur
     bool moteur_actifs[number_of_motor];            //Boolean to know if the motor as to spin or not
     bool moteur_direction[number_of_motor];         //Boolean to know, if the  motor is spinning, in wich direction it spins
     bool previous_moteur_direction[number_of_motor];//To check if we need to digital_write again or if it is the same as before
-    unsigned int actual_OCR1A = 39 ;
+    unsigned int actual_OCR1A = 59 ;
     int previous_speed = 0 ;                        //Used to check if the acceleration is not to high for that por motor, not used but w/e will be used soon , i think, theoricaly 
 
     //Utilisé niveau de l'interuption
