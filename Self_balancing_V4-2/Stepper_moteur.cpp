@@ -122,14 +122,8 @@ void Stepper_moteur::timer_interupt()
           moove(m);
       }
       min = min(min, timer_compteur[m]);
-
     }
   
-  
-  //it_duration = micros() - it_duration ;
-  //actual_OCR1A = min ;
-  //OCR1A = min ;
-}
 
 //                                                                                                                    Moove function
 //The desired motor mooves in the direction according to moteur_direction[moteur] private variable
